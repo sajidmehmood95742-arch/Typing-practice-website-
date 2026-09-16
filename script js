@@ -1,0 +1,426 @@
+const texts = [
+            "the quick brown fox jumps over the lazy dog",
+            "never underestimate the power of a good book",
+            "practice makes perfect keep typing every day",
+            "the early bird catches the worm in the morning",
+            "technology has revolutionized the way we live",
+            "coding is a fundamental skill for the future",
+            "learn to type faster and boost your productivity",
+            "the sun always shines brightest after the rain",
+            "a journey of a thousand miles begins with a single step",
+            "innovation distinguishes between a leader and a follower",
+            "success is not final failure is not fatal it is the courage to continue that counts",
+            "the only way to do great work is to love what you do",
+            "believe you can and you're halfway there",
+            "the future belongs to those who believe in the beauty of their dreams",
+            "it does not matter how slowly you go as long as you do not stop",
+            "your time is limited so don't waste it living someone else's life",
+            "strive not to be a success but rather to be of value",
+            "the mind is everything what you think you become",
+            "to be yourself in a world that is constantly trying to make you something else is the greatest accomplishment",
+            "the best way to predict the future is to create it"
+        ];
+
+        let currentText = [];
+        let typedText = [];
+        let charIndex = 0;
+        let errors = 0;
+        let timer = 0;
+        let intervalId;
+        let testStarted = false;
+        let selectedTime = 30; // Default time
+        let selectedWords = 25; // Default words
+
+        const typingTextElement = document.getElementById('typing-text');
+        const typingInputElement = document.getElementById('typing-input');
+        const timerDisplay = document.getElementById('timer-display');
+        const wpmDisplay = document.getElementById('wpm-display');
+        const accuracyDisplay = document.getElementById('accuracy-display');
+        const errorsDisplay = document.getElementById('errors-display');
+        const restartButton = document.getElementById('restart-test-btn');
+        const timeOptions = document.querySelectorAll('.time-option');
+        const wordOptions = document.querySelectorAll('.word-option');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const themeSwitch = document.getElementById('theme-switch');
+
+        // Modal elements
+        const resultsModal = document.getElementById('results-modal');
+        const modalWPM = document.getElementById('modal-wpm');
+        const modalAccuracy = document.getElementById('modal-accuracy');
+        const modalErrors = document.getElementById('modal-errors');
+        const modalTime = document.getElementById('modal-time');
+        const modalRestartBtn = document.getElementById('modal-restart-btn');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+
+        // Home page stats
+        const totalTestsDisplay = document.getElementById('total-tests');
+        const bestWPMDisplay = document.getElementById('best-wpm');
+        const avgWPMDisplay = document.getElementById('avg-wpm');
+
+        // Local Storage Keys
+        const LS_TOTAL_TESTS = 'fastfingers_total_tests';
+        const LS_BEST_WPM = 'fastfingers_best_wpm';
+        const LS_TOTAL_WPM = 'fastfingers_total_wpm'; // For average WPM calculation
+        const LS_TEST_RESULTS = 'fastfingers_test_results'; // For leaderboard
+        const LS_THEME = 'fastfingers_theme';
+
+        // --- Utility Functions ---
+        function getLocalStorage(key, defaultValue) {
+            try {
+                const item = localStorage.getItem(key);
+                return item ? JSON.parse(item) : defaultValue;
+            } catch (e) {
+                console.error("Error reading from localStorage", e);
+                return defaultValue;
+            }
+        }
+
+        function setLocalStorage(key, value) {
+            try {
+                localStorage.setItem(key, JSON.stringify(value));
+            } catch (e) {
+                console.error("Error writing to localStorage", e);
+            }
+        }
+
+        // --- Theme Toggle ---
+        function applyTheme(theme) {
+            document.body.className = theme;
+            themeSwitch.checked = (theme === 'dark-theme');
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.body.className;
+            const newTheme = currentTheme === 'dark-theme' ? 'light-theme' : 'dark-theme';
+            applyTheme(newTheme);
+            setLocalStorage(LS_THEME, newTheme);
+        }
+
+        themeSwitch.addEventListener('change', toggleTheme);
+
+        // Initialize theme on load
+        const savedTheme = getLocalStorage(LS_THEME, 'light-theme');
+        applyTheme(savedTheme);
+
+        // --- Navigation ---
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
+
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelector(`.nav-link[data-page="${pageId}"]`).classList.add('active');
+
+            if (pageId === 'home') {
+                updateHomePageStats();
+            } else if (pageId === 'leaderboard') {
+                loadLeaderboard();
+            } else if (pageId === 'practice') {
+                // Ensure practice page is ready
+                if (!testStarted) {
+                    resetTest();
+                }
+            }
+        }
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const pageId = e.target.dataset.page;
+                showPage(pageId);
+            });
+        });
+
+        // Handle "Start Typing Now!" button on home page
+        document.querySelector('#home .btn-primary').addEventListener('click', (e) => {
+            e.preventDefault();
+            const pageId = e.target.dataset.page;
+            showPage(pageId);
+        });
+
+        // --- Test Initialization and Generation ---
+        function getRandomWords(numWords) {
+            let selectedWords = [];
+            while (selectedWords.length < numWords) {
+                const randomIndex = Math.floor(Math.random() * texts.length);
+                const textWords = texts[randomIndex].split(' ');
+                selectedWords = selectedWords.concat(textWords);
+            }
+            // Ensure we don't exceed numWords and join with single spaces
+            return selectedWords.slice(0, numWords).join(' ');
+        }
+
+        function loadText() {
+            let textToDisplay;
+            if (selectedWords > 0) {
+                textToDisplay = getRandomWords(selectedWords);
+            } else {
+                // Fallback or specific logic for non-word based tests if any
+                textToDisplay = texts[Math.floor(Math.random() * texts.length)];
+            }
+
+            currentText = textToDisplay.split('');
+            typingTextElement.innerHTML = '';
+            currentText.forEach(char => {
+                const span = document.createElement('span');
+                span.textContent = char;
+                typingTextElement.appendChild(span);
+            });
+            typingInputElement.value = '';
+            typingInputElement.focus();
+            typedText = [];
+            charIndex = 0;
+            errors = 0;
+            updateCursor();
+            updateStats();
+        }
+
+        function updateCursor() {
+            const spans = typingTextElement.querySelectorAll('span');
+            spans.forEach((span, index) => {
+                span.classList.remove('current');
+            });
+            if (charIndex < spans.length) {
+                spans[charIndex].classList.add('current');
+            }
+        }
+
+        // --- Timer Functions ---
+        function startTimer() {
+            if (intervalId) clearInterval(intervalId);
+            timer = selectedTime;
+            timerDisplay.textContent = timer;
+            intervalId = setInterval(() => {
+                timer--;
+                timerDisplay.textContent = timer;
+                if (timer <= 0) {
+                    clearInterval(intervalId);
+                    endTest();
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(intervalId);
+            intervalId = null;
+        }
+
+        // --- Test Logic ---
+        function resetTest() {
+            stopTimer();
+            testStarted = false;
+            timer = selectedTime;
+            charIndex = 0;
+            errors = 0;
+            typedText = [];
+            typingInputElement.value = '';
+            typingInputElement.disabled = false;
+            typingInputElement.classList.remove('finished'); // Remove finished state if applied
+            wpmDisplay.textContent = '0';
+            accuracyDisplay.textContent = '0%';
+            errorsDisplay.textContent = '0';
+            timerDisplay.textContent = selectedTime;
+            loadText();
+        }
+
+        function updateStats() {
+            const totalCharsTyped = typedText.length;
+            const correctChars = totalCharsTyped - errors;
+            const accuracy = totalCharsTyped === 0 ? 0 : ((correctChars / totalCharsTyped) * 100).toFixed(0);
+
+            // WPM calculation: (correctly typed characters / 5) / (time in minutes)
+            // If timer is running, calculate based on elapsed time. If test ended, use selectedTime.
+            const timeElapsed = testStarted ? (selectedTime - timer) : selectedTime;
+            const minutes = timeElapsed / 60;
+            const wpm = minutes > 0 ? Math.round((correctChars / 5) / minutes) : 0;
+
+            wpmDisplay.textContent = wpm;
+            accuracyDisplay.textContent = `${accuracy}%`;
+            errorsDisplay.textContent = errors;
+        }
+
+        function endTest() {
+            stopTimer();
+            testStarted = false;
+            typingInputElement.disabled = true;
+            typingInputElement.classList.add('finished'); // Visual cue that test is over
+
+            const finalWPM = parseInt(wpmDisplay.textContent);
+            const finalAccuracy = parseInt(accuracyDisplay.textContent);
+            const finalErrors = parseInt(errorsDisplay.textContent);
+
+            // Update modal results
+            modalWPM.textContent = finalWPM;
+            modalAccuracy.textContent = `${finalAccuracy}%`;
+            modalErrors.textContent = finalErrors;
+            modalTime.textContent = `${selectedTime}s`;
+
+            showResultsModal();
+            updateGlobalStats(finalWPM, finalAccuracy);
+            saveTestResult(finalWPM, finalAccuracy, selectedTime);
+        }
+
+        function handleTypingInput(e) {
+            if (!testStarted) {
+                startTimer();
+                testStarted = true;
+            }
+
+            const inputChar = e.data; // Get the character typed
+            const allSpans = typingTextElement.querySelectorAll('span');
+
+            // Handle backspace
+            if (e.inputType === 'deleteContentBackward') {
+                if (charIndex > 0) {
+                    charIndex--;
+                    if (typedText[charIndex] !== currentText[charIndex]) {
+                        errors--;
+                    }
+                    typedText.pop();
+                    allSpans[charIndex].classList.remove('correct', 'incorrect');
+                }
+            } else if (inputChar) {
+                // Handle regular character input
+                if (charIndex < currentText.length) {
+                    typedText.push(inputChar);
+                    if (inputChar === currentText[charIndex]) {
+                        allSpans[charIndex].classList.add('correct');
+                        allSpans[charIndex].classList.remove('incorrect');
+                    } else {
+                        allSpans[charIndex].classList.add('incorrect');
+                        allSpans[charIndex].classList.remove('correct');
+                        errors++;
+                    }
+                    charIndex++;
+                }
+            }
+
+            updateCursor();
+            updateStats();
+
+            // Check if all characters are typed
+            if (charIndex === currentText.length) {
+                endTest();
+            }
+        }
+
+        // --- Event Listeners ---
+        typingInputElement.addEventListener('input', handleTypingInput);
+
+        restartButton.addEventListener('click', resetTest);
+
+        timeOptions.forEach(button => {
+            button.addEventListener('click', () => {
+                timeOptions.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                selectedTime = parseInt(button.dataset.time);
+                resetTest();
+            });
+        });
+
+        wordOptions.forEach(button => {
+            button.addEventListener('click', () => {
+                wordOptions.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                selectedWords = parseInt(button.dataset.words);
+                resetTest();
+            });
+        });
+
+        // --- Modal Functions ---
+        function showResultsModal() {
+            resultsModal.style.display = 'block';
+        }
+
+        function hideResultsModal() {
+            resultsModal.style.display = 'none';
+        }
+
+        modalCloseBtn.addEventListener('click', hideResultsModal);
+        modalRestartBtn.addEventListener('click', () => {
+            hideResultsModal();
+            resetTest();
+        });
+
+        // Close modal if clicking outside content
+        window.addEventListener('click', (event) => {
+            if (event.target === resultsModal) {
+                hideResultsModal();
+            }
+        });
+
+        // --- Global Stats and Leaderboard ---
+        function updateHomePageStats() {
+            let totalTests = getLocalStorage(LS_TOTAL_TESTS, 0);
+            let bestWPM = getLocalStorage(LS_BEST_WPM, 0);
+            let totalWPM = getLocalStorage(LS_TOTAL_WPM, 0);
+
+            totalTestsDisplay.textContent = totalTests;
+            bestWPMDisplay.textContent = bestWPM;
+            avgWPMDisplay.textContent = totalTests > 0 ? Math.round(totalWPM / totalTests) : 0;
+        }
+
+        function updateGlobalStats(wpm, accuracy) {
+            let totalTests = getLocalStorage(LS_TOTAL_TESTS, 0);
+            let bestWPM = getLocalStorage(LS_BEST_WPM, 0);
+            let totalWPM = getLocalStorage(LS_TOTAL_WPM, 0);
+
+            totalTests++;
+            totalWPM += wpm;
+            if (wpm > bestWPM) {
+                bestWPM = wpm;
+            }
+
+            setLocalStorage(LS_TOTAL_TESTS, totalTests);
+            setLocalStorage(LS_BEST_WPM, bestWPM);
+            setLocalStorage(LS_TOTAL_WPM, totalWPM);
+
+            updateHomePageStats(); // Refresh home page stats immediately
+        }
+
+        function saveTestResult(wpm, accuracy, time) {
+            let results = getLocalStorage(LS_TEST_RESULTS, []);
+            const playerName = "Guest"; // For now, use Guest. Could add input later.
+            const date = new Date().toLocaleDateString();
+
+            results.push({ name: playerName, wpm: wpm, accuracy: accuracy, time: time, date: date });
+
+            // Keep only top N results, e.g., 100, and sort by WPM
+            results.sort((a, b) => b.wpm - a.wpm || b.accuracy - a.accuracy); // Sort by WPM descending, then accuracy
+            results = results.slice(0, 100); // Keep only top 100
+
+            setLocalStorage(LS_TEST_RESULTS, results);
+        }
+
+        function loadLeaderboard() {
+            const leaderboardTableBody = document.querySelector('#leaderboard-table tbody');
+            leaderboardTableBody.innerHTML = ''; // Clear existing entries
+            const results = getLocalStorage(LS_TEST_RESULTS, []);
+
+            if (results.length === 0) {
+                leaderboardTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No results yet. Start typing!</td></tr>';
+                return;
+            }
+
+            results.forEach((result, index) => {
+                const row = leaderboardTableBody.insertRow();
+                row.insertCell().textContent = index + 1; // Rank
+                row.insertCell().textContent = result.name;
+                row.insertCell().textContent = result.wpm;
+                row.insertCell().textContent = `${result.accuracy}%`;
+                row.insertCell().textContent = result.date;
+            });
+        }
+
+
+        // --- Initial Setup ---
+        document.addEventListener('DOMContentLoaded', () => {
+            resetTest(); // Initialize the practice text
+            updateHomePageStats(); // Load home page stats
+            // The default page is 'home', so we don't need to call showPage('home') explicitly
+            // unless we want to ensure it's active even if HTML has it active by default.
+            // The navLinks logic already handles setting 'active' class on load.
+        });
