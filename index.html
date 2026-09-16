@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TypeMaster - Improve Your Typing Speed</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    </head>
+<body>
+    <header>
+        <div class="logo">
+            <a href="#" class="nav-link" data-page="home">FastFingers</a>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="#" class="nav-link active" data-page="home">Home</a></li>
+                <li><a href="#" class="nav-link" data-page="practice">Practice</a></li>
+                <li><a href="#" class="nav-link" data-page="leaderboard">Leaderboard</a></li>
+                <li><a href="#" class="nav-link" data-page="about">About</a></li>
+            </ul>
+        </nav>
+        <div class="theme-toggle">
+            <input type="checkbox" id="theme-switch" class="theme-switch" />
+            <label for="theme-switch" class="theme-switch-label"></label>
+        </div>
+    </header>
+
+    <main>
+        <section id="home" class="page active">
+            <h1>Improve Your Typing Speed</h1>
+            <p>Practice typing with various texts and track your progress. Challenge yourself and climb the leaderboard!</p>
+            <button class="btn-primary" data-page="practice">Start Typing Now!</button>
+
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <h3>Total Tests Taken</h3>
+                    <p id="total-tests">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Best WPM</h3>
+                    <p id="best-wpm">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Average WPM</h3>
+                    <p id="avg-wpm">0</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="practice" class="page">
+            <div class="controls">
+                <div class="control-group">
+                    <button id="time-15" class="time-option active" data-time="15">15s</button>
+                    <button id="time-30" class="time-option" data-time="30">30s</button>
+                    <button id="time-60" class="time-option" data-time="60">60s</button>
+                </div>
+                <div class="control-group">
+                    <button id="words-10" class="word-option active" data-words="10">10 Words</button>
+                    <button id="words-25" class="word-option" data-words="25">25 Words</button>
+                    <button id="words-50" class="word-option" data-words="50">50 Words</button>
+                </div>
+            </div>
+
+            <div id="typing-text"></div>
+            <textarea id="typing-input" placeholder="Start typing here..." autofocus></textarea>
+
+            <div class="practice-stats">
+                <div class="practice-stat-item">
+                    <h4>Time</h4>
+                    <p><span id="timer-display">0</span>s</p>
+                </div>
+                <div class="practice-stat-item">
+                    <h4>WPM</h4>
+                    <p id="wpm-display">0</p>
+                </div>
+                <div class="practice-stat-item">
+                    <h4>Accuracy</h4>
+                    <p id="accuracy-display">0%</p>
+                </div>
+                <div class="practice-stat-item">
+                    <h4>Errors</h4>
+                    <p id="errors-display">0</p>
+                </div>
+            </div>
+
+            <button id="restart-test-btn">Restart Test</button>
+        </section>
+
+        <section id="leaderboard" class="page">
+            <h2>Top Typists</h2>
+            <div class="leaderboard-table-container">
+                <table id="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Name</th>
+                            <th>WPM</th>
+                            <th>Accuracy</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Leaderboard entries will be inserted here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="about" class="page">
+            <h2>About FastFingers</h2>
+            <p>FastFingers is a modern typing test application designed to help you improve your typing speed and accuracy. With a clean, intuitive interface and various practice modes, you can track your progress, identify areas for improvement, and challenge yourself against others on the leaderboard.</p>
+            <p>Our goal is to provide a fun and effective way to master your keyboard skills, whether you're a beginner looking to learn touch typing or an experienced typist aiming for higher speeds.</p>
+            <p>Developed with HTML, CSS, and JavaScript, FastFingers is a testament to responsive web design and user-centric development.</p>
+        </section>
+    </main>
+
+    <!-- Results Modal -->
+    <div id="results-modal" class="modal">
+        <div class="modal-content">
+            <h3>Test Complete!</h3>
+            <div class="modal-results-grid">
+                <div>
+                    <span>WPM</span>
+                    <p id="modal-wpm">0</p>
+                </div>
+                <div>
+                    <span>Accuracy</span>
+                    <p id="modal-accuracy">0%</p>
+                </div>
+                <div>
+                    <span>Errors</span>
+                    <p id="modal-errors">0</p>
+                </div>
+                <div>
+                    <span>Time</span>
+                    <p id="modal-time">0s</p>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-primary" id="modal-restart-btn">Try Again</button>
+                <button class="btn-secondary" id="modal-close-btn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2023 FastFingers. All rights reserved.</p>
+    </footer>
+
+    </body>
+  </html>
